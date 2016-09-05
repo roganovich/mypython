@@ -14,7 +14,17 @@ class dahua:
 
     def startParser(self):
         page =  urllib.request.urlopen(self.attr['url']).read()
-        self.pageObj = BeautifulSoup(page)
+        soup = BeautifulSoup(page, "html.parser")
+        mydivs = soup.findAll("a", {"class": "product-offer"})
+        catalog = {}
+        for each_div in mydivs:
+            name = each_div.get_text().strip()
+            url = each_div.get('href')
+            img = each_div.findAll('img')[0].get('src')
+            catalog= {'name':name,'url':url,'img':img}
+
+            print (catalog)
+
 
     def getPageObj(self):
         return self.pageObj
