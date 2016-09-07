@@ -2,10 +2,13 @@
 import urllib.request
 from bs4 import BeautifulSoup
 import csv
+import codecs
 
 class Dahua:
     attr = {}
     pageObj = {}
+    fileObjW = None
+    openCsvW = None
 
     # функция добавляет параметра в загрузку
     def setAttr(self,name,value):
@@ -34,9 +37,8 @@ class Dahua:
                     self.getArticlePager(catalog)
                     break
             else:
-                catalog = {'catalogname':'','catalogurl':'','pagesurl': catalogname, 'subname': catalogurl}
+                catalog = {'catalogname':'','catalogurl':'','pagesurl': catalogurl, 'subname': catalogname}
                 self.getArticlePager(catalog)
-            break
 
     # функция собирает все данные о постраничной навигации и передает адрес страниц
     def getArticlePager(self,catalog):
@@ -44,20 +46,21 @@ class Dahua:
         html = urllib.request.urlopen(catalog['pagesurl']).read()
         soup = BeautifulSoup(html, "html.parser")
         pagers = soup.findAll("div", {"class": "paginator"})[0]
-        ahref = pagers.findAll('a',{"class":"paginator-item"})[-1].get('href')
-
-        pagecount = int(ahref[-2::]) #выбрать последние два символа в строке
+        pagecount = 1
+        if pagers:
+            ahrefPagers = pagers.findAll('a',{"class":"paginator-item"})
+            if len(ahrefPagers) > 0:
+                ahref = ahrefPagers[-1].get('href')
+                pagecount = int(ahref[-2::].replace('=','')) #выбрать последние два символа в строке
         #? & page = 2
         p = 1
         while p<=pagecount:
             if p>1:
                 catalog['pageurl'] = catalog['pagesurl']+'?&page='+str(p)
                 self.getArticleList(catalog)
-                break
             else:
                 catalog['pageurl'] = catalog['pagesurl']
                 self.getArticleList(catalog)
-                break
             p +=1
 
     # функция собирает все артикулы на странице
@@ -77,7 +80,6 @@ class Dahua:
     def getOneAticle(self,article):
         html = urllib.request.urlopen(article['url']).read()
         soup = BeautifulSoup(html, "html.parser")
-
         article['desc'] = soup.findAll("div", {"class": "product-description product-info-section"})[0].get_text().strip()
         article['img'] = self.attr['url'] + soup.findAll("div", {"class": "product-image-wrapper"})[0].findAll("img")[0].get('src')
 
@@ -94,10 +96,32 @@ class Dahua:
                 article_spec[attr]=value
 
         article['spec']=article_spec
-        print(article)
-        self.pageObj[article['url']]=article
+
+
+        if self.attr['export'] == True:
+            if self.attr['export_format'] == 'csv':
+                if self.attr['export_file'] != '' and self.openCsvW is None and self.fileObjW is None:
+                    self.openCsvW = codecs.open(self.attr['export_file'], 'w', "utf-8")
+                    self.fileObjW = csv.writer(self.openCsvW, quoting=csv.QUOTE_ALL,dialect='excel-tab')
+                    self.fileObjW.writerow(article)
+                csvArray = []
+                for i, val in enumerate(article):
+                    atrStr = article[val]
+                    if type(atrStr) == dict:
+                        spec = ''
+                        for k in atrStr:
+                            spec +=str(k).strip()+':'+str(atrStr[k]).strip()+';'
+                        csvArray.append(spec.replace('\n','').strip())
+                    else:
+                        csvArray.append(atrStr.replace('\n','').strip())
+                self.fileObjW.writerow(csvArray)
+                print(csvArray)
+        #self.pageObj[article['url']]=article
 
     #функция возвращает весь список артикулов которые удалось собрать
     def returnAllObj(self):
         return self.pageObj
 
+
+    def __del__(self):
+        self.openCsvW.close()

@@ -15,8 +15,11 @@ baseclass.testFunc('check add new module') #вызываем метод из м�
 dp= Dahua() #создаем обьект класса модели
 dp.setAttr('url','http://dahua-russia.ru')
 dp.setAttr('purl','http://dahua-russia.ru/catalog')
+dp.setAttr('export',True)
+dp.setAttr('export_format','csv')
+dp.setAttr('export_file','dahua.csv')
 
 dp.startParser()
 allpage = dp.returnAllObj()
-print(allpage)
+
 t.endTimer() #считаем разницу во времени
