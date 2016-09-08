@@ -7,6 +7,7 @@ class Timer(object):
 
     def startTime(self):
         self.start = time.time()
+        print('Start Process')
         return self
 
     def endTimer(self):
@@ -15,3 +16,4 @@ class Timer(object):
         self.msecs = self.secs  # millisecs
         res = round(self.msecs,3)
         print (res,"sec" )
+        print('End Process')

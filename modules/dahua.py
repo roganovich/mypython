@@ -3,6 +3,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 import csv
 import codecs
+from catalogs import Catalogs #подключаем модуль работы с MySQL database
 
 class Dahua:
     attr = {}
@@ -116,12 +117,27 @@ class Dahua:
                         csvArray.append(atrStr.replace('\n','').strip())
                 self.fileObjW.writerow(csvArray)
                 print(csvArray)
+            elif('mysql'):
+                self.addToBD(article)
+
         #self.pageObj[article['url']]=article
 
     #функция возвращает весь список артикулов которые удалось собрать
     def returnAllObj(self):
         return self.pageObj
 
+    #функция возвращает весь список артикулов которые удалось собрать
+    def addToBD(self,article):
+        sqlsrt = Catalogs()
+        catalogs = sqlsrt.getAllCatalogs()
+        print(catalogs)
+        sqlsrt.setCatalog(['article'],'subname')
+        catalogs = sqlsrt.getAllCatalogs()
+        print(catalogs)
+        exit(0)
 
     def __del__(self):
-        self.openCsvW.close()
+        if self.attr['export'] == True:
+            if self.attr['export_format'] == 'csv':
+                if self.attr['export_file'] != '' and self.openCsvW is not None and self.fileObjW is not None:
+                    self.openCsvW.close()
